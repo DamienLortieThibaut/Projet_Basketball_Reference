@@ -16,24 +16,18 @@ import {
   Scatter,
   TooltipProps,
 } from "recharts"
-import { ArrowUpDown, Search, Filter, BarChart3, UserRound, Target } from "lucide-react"
+import { ArrowUpDown, Search, Filter, BarChart3, UserRound, Target, Activity } from "lucide-react"
 import PlayerCard from "@/components/PlayerCard"
 import ClutchScoreCard from "@/components/ClutchScoreData"
 import ShotChart from "@/components/ShotChart"
 import { calculatePlayerAverages } from "@/lib/utils"
 import { playerData } from "@/data/playersData"
 import RadarChart from "@/components/RadarChart"
-import { loadTeamShotData, loadPlayerShotData, getAvailablePlayers } from "@/services/shotDataService"
-
-interface ClutchScoreData {
-  name: string
-  score: number
-}
-
-interface PointsDistributionData {
-  name: string
-  value: number
-}
+import { loadPlayerShotData, getAvailablePlayers } from "@/services/shotDataService"
+import PlayerComparisonChart from "@/components/PlayerComparisonChart"
+import ShootingTrendsChart from "@/components/ShootingTrendsChart"
+import DistanceEfficiencyChart from "@/components/DistanceEfficiencyChart"
+import ClutchSituationsChart from "@/components/ClutchSituationsChart"
 
 interface EfficiencyData {
   name: string
@@ -105,6 +99,8 @@ export default function Dashboard() {
   const [selectedPlayerForShots, setSelectedPlayerForShots] = useState<string>("")
   const [availablePlayers, setAvailablePlayers] = useState<{id: string, name: string, team: string}[]>([])
   const [isLoadingShots, setIsLoadingShots] = useState(false)
+  const [comparePlayerData, setComparePlayerData] = useState<ShotData[]>([])
+  const [selectedComparePlayer, setSelectedComparePlayer] = useState<string>("")
 
   // Effet pour charger la liste des joueurs disponibles pour les tirs
   useEffect(() => {
@@ -116,6 +112,10 @@ export default function Dashboard() {
       // Si nous avons des joueurs disponibles, sélectionner le premier par défaut
       if (players.length > 0) {
         setSelectedPlayerForShots(players[0].id);
+        // Deuxième joueur pour la comparaison (si disponible)
+        if (players.length > 1) {
+          setSelectedComparePlayer(players[1].id);
+        }
       }
     };
     
@@ -142,6 +142,26 @@ export default function Dashboard() {
     loadShots();
   }, [selectedPlayerForShots]);
 
+  // Effet pour charger les données du joueur de comparaison
+  useEffect(() => {
+    const loadComparePlayerShots = async () => {
+      if (!selectedComparePlayer) {
+        setComparePlayerData([]);
+        return;
+      }
+      
+      try {
+        const data = await loadPlayerShotData(selectedComparePlayer);
+        setComparePlayerData(data);
+      } catch (error) {
+        console.error("Erreur lors du chargement des tirs pour comparaison:", error);
+        setComparePlayerData([]);
+      }
+    };
+    
+    loadComparePlayerShots();
+  }, [selectedComparePlayer]);
+
   // Calculate averages for all players
   const playersWithAverages = calculatePlayerAverages(playerData)
     .filter(player => player.matches >= MIN_MATCHES)
@@ -164,22 +184,6 @@ export default function Dashboard() {
 
   // Extract unique teams for filter
   const teams = [...new Set(playersWithAverages.map((player) => player.team))].filter(Boolean)
-
-  // Prepare data for clutch score bar chart
-  const clutchScoreData: ClutchScoreData[] = topClutchPlayers
-    .slice(0, 10)
-    .map((player) => ({
-      name: player.player_name,
-      score: Number(player.clutchScore.toFixed(1))
-    }))
-
-  // Prepare data for points distribution pie chart
-  const pointsDistributionData: PointsDistributionData[] = topClutchPlayers
-    .slice(0, 5)
-    .map((player) => ({
-      name: player.player_name,
-      value: Number(player.points.toFixed(1))
-    }))
 
   // Prepare data for efficiency scatter plot
   const efficiencyData: EfficiencyData[] = playersWithAverages.map((player) => {
@@ -327,7 +331,7 @@ export default function Dashboard() {
 
         {/* Tabs for different views */}
         <Tabs defaultValue="table" className="mt-4">
-          <TabsList className="grid w-full grid-cols-6 md:w-[700px]">
+          <TabsList className="grid w-full grid-cols-7 md:w-[840px]">
             <TabsTrigger value="table" className="flex items-center gap-2">
               <Filter className="h-4 w-4" />
               <span>Tableau</span>
@@ -347,6 +351,10 @@ export default function Dashboard() {
             <TabsTrigger value="shotchart" className="flex items-center gap-2">
               <Target className="h-4 w-4" />
               <span>Shot Chart</span>
+            </TabsTrigger>
+            <TabsTrigger value="advanced" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              <span>Analyses</span>
             </TabsTrigger>
           </TabsList>
 
@@ -495,40 +503,107 @@ export default function Dashboard() {
           <TabsContent value="comparison" className="mt-4">
             <Card>
               <CardHeader>
-                <CardTitle>Comparaison avec la moyenne de la ligue</CardTitle>
-                <CardDescription>Sélectionnez un joueur pour voir ses statistiques comparées à la moyenne de la ligue</CardDescription>
+                <CardTitle>Comparaisons</CardTitle>
+                <CardDescription>Comparez les performances par rapport à la ligue ou à un autre joueur</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="mb-4">
-                  <Select
-                    value={selectedPlayer?.player_name || ""}
-                    onValueChange={(value) => {
-                      const player = playersWithAverages.find(p => p.player_name === value)
-                      if (player) {
-                        setSelectedPlayer(player)
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="w-full md:w-[300px]">
-                      <SelectValue placeholder="Sélectionner un joueur" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {playersWithAverages.map((player) => (
-                        <SelectItem key={player.player_name} value={player.player_name}>
-                          {player.player_name} ({player.team})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Tabs defaultValue="league">
+                  <TabsList className="mb-6">
+                    <TabsTrigger value="league">Comparaison avec la ligue</TabsTrigger>
+                    <TabsTrigger value="player">Comparaison entre joueurs</TabsTrigger>
+                  </TabsList>
 
-                {selectedPlayer && (
-                  <RadarChart
-                    data={prepareRadarData(selectedPlayer)}
-                    playerName={selectedPlayer.player_name}
-                    playerColor={teamColors[selectedPlayer.team]?.bg || '#006BB6'}
-                  />
-                )}
+                  <TabsContent value="league">
+                    <div className="mb-4">
+                      <Select
+                        value={selectedPlayer?.player_name || ""}
+                        onValueChange={(value) => {
+                          const player = playersWithAverages.find(p => p.player_name === value)
+                          if (player) {
+                            setSelectedPlayer(player)
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-full md:w-[300px]">
+                          <SelectValue placeholder="Sélectionner un joueur" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {playersWithAverages.map((player) => (
+                            <SelectItem key={player.player_name} value={player.player_name}>
+                              {player.player_name} ({player.team})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {selectedPlayer && (
+                      <RadarChart
+                        data={prepareRadarData(selectedPlayer)}
+                        playerName={selectedPlayer.player_name}
+                        playerColor={teamColors[selectedPlayer.team]?.bg || '#006BB6'}
+                      />
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="player">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      <div>
+                        <h3 className="text-sm font-medium mb-2">Joueur 1</h3>
+                        <Select
+                          value={selectedPlayerForShots}
+                          onValueChange={setSelectedPlayerForShots}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Sélectionner un joueur" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availablePlayers.map((player) => (
+                              <SelectItem key={player.id} value={player.id}>
+                                {player.name} ({player.team})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-sm font-medium mb-2">Joueur 2</h3>
+                        <Select
+                          value={selectedComparePlayer}
+                          onValueChange={setSelectedComparePlayer}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Sélectionner un joueur" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availablePlayers.map((player) => (
+                              <SelectItem key={player.id} value={player.id}>
+                                {player.name} ({player.team})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {isLoadingShots ? (
+                      <div className="flex justify-center items-center h-60">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                      </div>
+                    ) : shootingData.length > 0 && comparePlayerData.length > 0 ? (
+                      <PlayerComparisonChart 
+                        player1Data={shootingData} 
+                        player2Data={comparePlayerData} 
+                        teamColors={teamColors} 
+                      />
+                    ) : (
+                      <div className="flex justify-center items-center h-60 text-gray-500">
+                        <p>Sélectionnez deux joueurs pour comparer leurs performances</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </TabsContent>
@@ -583,12 +658,49 @@ export default function Dashboard() {
             </Card>
           </TabsContent>
 
-          {/* Clutch View */}
-          <TabsContent value="clutch" className="mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {topClutchPlayers.map((player, index) => (
-                <ClutchScoreCard key={index} player={player} rank={index + 1} />
-              ))}
+          {/* Advanced Analysis Tab */}
+          <TabsContent value="advanced" className="mt-4">
+            <div className="grid grid-cols-1 gap-4">
+              {isLoadingShots ? (
+                <div className="flex justify-center items-center h-60">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                </div>
+              ) : shootingData.length > 0 ? (
+                <>
+                  <Tabs defaultValue="trends">
+                    <TabsList className="mb-4">
+                      <TabsTrigger value="trends">Tendances</TabsTrigger>
+                      <TabsTrigger value="distance">Distance</TabsTrigger>
+                      <TabsTrigger value="clutch">Situations clutch</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="trends">
+                      <ShootingTrendsChart 
+                        data={shootingData} 
+                        teamColor={teamColors[shootingData[0]?.teams.split(',')[1]?.trim().split(' ')[0] || 'CHI']?.bg || '#CE1141'} 
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="distance">
+                      <DistanceEfficiencyChart 
+                        data={shootingData} 
+                        teamColor={teamColors[shootingData[0]?.teams.split(',')[1]?.trim().split(' ')[0] || 'CHI']?.bg || '#CE1141'} 
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="clutch">
+                      <ClutchSituationsChart 
+                        data={shootingData} 
+                        teamColor={teamColors[shootingData[0]?.teams.split(',')[1]?.trim().split(' ')[0] || 'CHI']?.bg || '#CE1141'} 
+                      />
+                    </TabsContent>
+                  </Tabs>
+                </>
+              ) : (
+                <div className="flex justify-center items-center h-60 text-gray-500">
+                  <p>Sélectionnez un joueur dans l'onglet Shot Chart pour voir les analyses avancées</p>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>

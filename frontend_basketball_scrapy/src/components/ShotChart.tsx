@@ -28,6 +28,139 @@ interface ShotChartProps {
   teamColors: { [key: string]: { bg: string, text: string } };
 }
 
+// Interface for tooltip payload
+interface TooltipPayload {
+  payload: {
+    made: boolean;
+    shotType: string;
+    distance: number;
+    gameDate: string;
+    quarter: string;
+    timeRemaining: string;
+    scoreDescription: string;
+  };
+}
+
+// Forme personnalisée de triangle pour les tirs à 3 points
+const CustomTriangle = (props: any) => {
+  const { cx, cy, fill, opacity } = props;
+  const size = 8; // Taille du triangle
+  
+  return (
+    <polygon 
+      points={`${cx},${cy-size} ${cx-size},${cy+size} ${cx+size},${cy+size}`} 
+      fill={fill} 
+      opacity={opacity} 
+    />
+  );
+};
+
+// Forme personnalisée de cercle pour les tirs à 2 points
+const CustomCircle = (props: any) => {
+  const { cx, cy, fill, opacity } = props;
+  const radius = 4; // Rayon du cercle
+  
+  return (
+    <circle 
+      cx={cx} 
+      cy={cy} 
+      r={radius} 
+      fill={fill} 
+      opacity={opacity} 
+    />
+  );
+};
+
+// Composant pour le terrain de basket
+const BasketballCourt = () => (
+  <svg width="500" height="470" viewBox="0 0 500 470" fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Ligne de base */}
+    <line x1="0" y1="380" x2="500" y2="380" stroke="black" strokeWidth="2" />
+    
+    {/* Zone restrictive */}
+    <rect x="175" y="260" width="150" height="120" stroke="black" strokeWidth="2" fill="none" />
+    
+    {/* Cercle de la ligne des lancers francs */}
+    <circle cx="250" cy="260" r="40" stroke="black" strokeWidth="2" fill="none" />
+    
+    {/* Panier */}
+    <circle cx="250" cy="380" r="10" stroke="black" strokeWidth="2" fill="none" />
+  </svg>
+);
+
+// Composant pour afficher un quart-temps spécifique
+const QuarterChart = ({ 
+  data, 
+  quarter, 
+  renderCustomShape,
+  teamColor
+}: { 
+  data: any[], 
+  quarter: string,
+  renderCustomShape: (props: any) => React.ReactElement,
+  teamColor: string
+}) => {
+  const filteredData = data.filter(shot => shot.quarter === quarter);
+  const madeShots = filteredData.filter(shot => shot.made).length;
+  const percentage = filteredData.length > 0 
+    ? (madeShots / filteredData.length * 100).toFixed(1) 
+    : '0.0';
+
+  return (
+    <Card className="w-full">
+      <CardHeader className="p-3">
+        <CardTitle className="text-base flex justify-between items-center">
+          <span>{quarter}</span>
+          <Badge variant="outline" className="bg-green-100">
+            {percentage}% ({madeShots}/{filteredData.length})
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-3">
+        <div className="relative border border-gray-200 rounded-lg bg-gray-50 h-[400px]">
+          {/* Dessin du terrain */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
+            <BasketballCourt />
+          </div>
+
+          {/* Scatter plot */}
+          <div style={{ width: '500px', height: 400, margin: '0 auto' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ScatterChart
+                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+              >
+                <XAxis type="number" dataKey="x" domain={[0, 500]} hide />
+                <YAxis type="number" dataKey="y" domain={[0, 470]} hide />
+                <ZAxis range={[60, 60]} />
+                <Tooltip 
+                  content={({ payload }: { payload?: TooltipPayload[] }) => {
+                    if (payload && payload.length > 0) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="p-2 bg-white border rounded shadow-md text-xs">
+                          <p className="font-bold">{data.made ? 'Tir réussi' : 'Tir manqué'}</p>
+                          <p>{data.shotType} ({data.distance} pieds)</p>
+                          <p>{data.timeRemaining}</p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Scatter 
+                  name="Tirs" 
+                  data={filteredData} 
+                  shape={renderCustomShape}
+                />
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 const ShotChart: React.FC<ShotChartProps> = ({ data, teamColors }) => {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'made' | 'missed'>('all');
   const [selectedQuarter, setSelectedQuarter] = useState<string>('all');
@@ -53,7 +186,7 @@ const ShotChart: React.FC<ShotChartProps> = ({ data, teamColors }) => {
 
   // Adapter les coordonnées pour le terrain de basket
   const chartData = filteredData.map(shot => ({
-    x: parseFloat(shot.x_coordinate),
+    x: parseFloat(shot.x_coordinate + 20),
     y: parseFloat(shot.y_coordinate),
     made: shot.is_made === 'True',
     distance: parseInt(shot.shot_distance || '0', 10),
@@ -90,6 +223,19 @@ const ShotChart: React.FC<ShotChartProps> = ({ data, teamColors }) => {
 
   // Couleur de l'équipe pour les visualisations
   const teamColor = teamColors[teamCode]?.bg || '#CE1141';
+
+  // Fonction pour rendre la bonne forme selon le type de tir
+  const renderCustomShape = (props: any) => {
+    const { x, y, payload } = props;
+    const isMade = payload.made;
+    const isThreePointer = payload.shotType === '3-pointer';
+    const fill = isMade ? teamColor : '#888888';
+    const opacity = isMade ? 0.8 : 0.5;
+    
+    return isThreePointer 
+      ? <CustomTriangle cx={x} cy={y} fill={fill} opacity={opacity} /> 
+      : <CustomCircle cx={x} cy={y} fill={fill} opacity={opacity} />;
+  };
 
   return (
     <Card className="w-full">
@@ -154,7 +300,8 @@ const ShotChart: React.FC<ShotChartProps> = ({ data, teamColors }) => {
         
         <Tabs defaultValue="scatter" className="w-full">
           <TabsList className="mb-4">
-            <TabsTrigger value="scatter">Scatter Plot</TabsTrigger>
+            <TabsTrigger value="scatter">General</TabsTrigger>
+            <TabsTrigger value="quarters">Par Quart-Temps</TabsTrigger>
             <TabsTrigger value="stats">Statistiques</TabsTrigger>
           </TabsList>
           
@@ -164,27 +311,21 @@ const ShotChart: React.FC<ShotChartProps> = ({ data, teamColors }) => {
               <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
                 <svg width="500" height="470" viewBox="0 0 500 470" fill="none" xmlns="http://www.w3.org/2000/svg">
                   {/* Ligne de base */}
-                  <line x1="0" y1="50" x2="500" y2="50" stroke="black" strokeWidth="2" />
-                  
-                  {/* Cercle central */}
-                  <circle cx="250" cy="250" r="60" stroke="black" strokeWidth="2" fill="none" />
-                  
-                  {/* Arc des trois points */}
-                  <path d="M 30,50 A 240,240 0 0,1 470,50" stroke="black" strokeWidth="2" fill="none" />
+                  <line x1="0" y1="420" x2="500" y2="420" stroke="black" strokeWidth="2" />
                   
                   {/* Zone restrictive */}
-                  <rect x="175" y="50" width="150" height="120" stroke="black" strokeWidth="2" fill="none" />
+                  <rect x="175" y="300" width="150" height="120" stroke="black" strokeWidth="2" fill="none" />
                   
                   {/* Cercle de la ligne des lancers francs */}
-                  <circle cx="250" cy="170" r="60" stroke="black" strokeWidth="2" fill="none" />
+                  <circle cx="250" cy="300" r="60" stroke="black" strokeWidth="2" fill="none" />
                   
                   {/* Panier */}
-                  <circle cx="250" cy="50" r="10" stroke="black" strokeWidth="2" fill="none" />
+                  <circle cx="250" cy="420" r="10" stroke="black" strokeWidth="2" fill="none" />
                 </svg>
               </div>
 
               {/* Scatter plot */}
-              <div style={{ width: '100%', height: 500 }}>
+              <div style={{ width: '500px', height: 500, margin: '0 auto' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <ScatterChart
                     margin={{ top: 20, right: 30, bottom: 20, left: 20 }}
@@ -193,7 +334,7 @@ const ShotChart: React.FC<ShotChartProps> = ({ data, teamColors }) => {
                     <YAxis type="number" dataKey="y" domain={[0, 470]} hide />
                     <ZAxis range={[60, 60]} />
                     <Tooltip 
-                      content={({ payload }) => {
+                      content={({ payload }: { payload?: TooltipPayload[] }) => {
                         if (payload && payload.length > 0) {
                           const data = payload[0].payload;
                           return (
@@ -210,19 +351,52 @@ const ShotChart: React.FC<ShotChartProps> = ({ data, teamColors }) => {
                         return null;
                       }}
                     />
-                    <Scatter name="Tirs" data={chartData}>
-                      {chartData.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={entry.made ? teamColor : '#888888'} 
-                          opacity={entry.made ? 0.8 : 0.5}
-                          shape={entry.shotType === '3-pointer' ? 'triangle' : 'circle'}
-                        />
-                      ))}
-                    </Scatter>
+                    <Scatter 
+                      name="Tirs" 
+                      data={chartData} 
+                      shape={renderCustomShape}
+                    />
+                    <Legend
+                      verticalAlign="top"
+                      height={36}
+                      content={() => (
+                        <div className="flex gap-4 justify-center mb-2 p-2 bg-white border rounded-md">
+                          <div className="flex items-center gap-2">
+                            <svg width="20" height="20" viewBox="0 0 20 20">
+                              <circle cx="10" cy="10" r="5" fill={teamColor} opacity={0.8} />
+                            </svg>
+                            <span className="text-sm">2-pointer</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <svg width="20" height="20" viewBox="0 0 20 20">
+                              <polygon 
+                                points="10,4 4,16 16,16" 
+                                fill={teamColor} 
+                                opacity={0.8} 
+                              />
+                            </svg>
+                            <span className="text-sm">3-pointer</span>
+                          </div>
+                        </div>
+                      )}
+                    />
                   </ScatterChart>
                 </ResponsiveContainer>
               </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="quarters">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {quarters.map(quarter => (
+                <QuarterChart 
+                  key={quarter}
+                  data={chartData}
+                  quarter={quarter}
+                  renderCustomShape={renderCustomShape}
+                  teamColor={teamColor} 
+                />
+              ))}
             </div>
           </TabsContent>
           
@@ -258,7 +432,31 @@ const ShotChart: React.FC<ShotChartProps> = ({ data, teamColors }) => {
                 </CardContent>
               </Card>
               
-              {/* Statistiques par zone ou par quart-temps pourraient être ajoutées ici */}
+              {/* Statistiques par quart-temps */}
+              <Card className="md:col-span-3">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Statistiques par quart-temps</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {quarters.map(quarter => {
+                      const quarterShots = filteredData.filter(shot => shot.quarter === quarter);
+                      const quarterMade = quarterShots.filter(shot => shot.is_made === 'True').length;
+                      const quarterPercentage = quarterShots.length > 0 
+                        ? (quarterMade / quarterShots.length * 100).toFixed(1) 
+                        : '0.0';
+                      
+                      return (
+                        <div key={quarter} className="bg-gray-50 rounded-lg p-3 border">
+                          <h3 className="font-medium">{quarter}</h3>
+                          <div className="text-2xl font-bold mt-1">{quarterPercentage}%</div>
+                          <p className="text-gray-500 text-sm">{quarterMade}/{quarterShots.length} tirs</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>
