@@ -6,13 +6,9 @@
 from scrapy import signals
 
 # useful for handling different item types with a single interface
-from itemadapter import is_item, ItemAdapter
-
 import random
 import time
 from scrapy.downloadermiddlewares.retry import RetryMiddleware
-from scrapy.utils.response import response_status_message
-
 
 class BasketballScrapyProjectSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,

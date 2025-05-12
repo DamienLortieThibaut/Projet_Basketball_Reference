@@ -272,11 +272,20 @@ const PlayerComparisonChart: React.FC<PlayerComparisonChartProps> = ({
           <h3 className="text-md font-medium mb-3">Pourcentages par zone</h3>
           <div style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer>
-              <BarChart data={zoneComparisonData} layout="vertical">
+              <BarChart 
+                data={zoneComparisonData} 
+                layout="vertical"
+                margin={{ left: 120, right: 30, top: 20, bottom: 20 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" domain={[0, 100]} />
-                <YAxis dataKey="name" type="category" />
-                <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={120}
+                  tick={{ fontSize: 12 }}
+                />
+                <Tooltip formatter={(value: number) => `${Number(value).toFixed(1)}%`} />
                 <Legend />
                 <Bar dataKey={player1Stats.playerName} fill={player1Color} />
                 <Bar dataKey={player2Stats.playerName} fill={player2Color} />

@@ -192,7 +192,10 @@ export function calculatePlayerAverages(players: Player[]): PlayerStats[] {
     }
 
     const stats = playerMap.get(player.player_name)!
-    stats.matches++
+    
+    if (player.quarter === 'Q4') {
+      stats.matches++
+    }
 
     // Add stats to totals
     stats.total_points += Number.parseInt(player.points || "0")

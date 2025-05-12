@@ -4,8 +4,7 @@
 # https://docs.scrapy.org/en/latest/topics/items.html
 
 import scrapy
-from scrapy.loader import ItemLoader
-from scrapy.loader.processors import TakeFirst, MapCompose, Join
+from scrapy.loader.processors import TakeFirst, MapCompose
 
 def clean_value(value):
     """Nettoie les valeurs en supprimant les espaces et en convertissant None en 0"""

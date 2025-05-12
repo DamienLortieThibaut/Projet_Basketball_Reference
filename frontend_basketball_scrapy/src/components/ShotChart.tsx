@@ -93,12 +93,10 @@ const QuarterChart = ({
   data, 
   quarter, 
   renderCustomShape,
-  teamColor
 }: { 
   data: any[], 
   quarter: string,
   renderCustomShape: (props: any) => React.ReactElement,
-  teamColor: string
 }) => {
   const filteredData = data.filter(shot => shot.quarter === quarter);
   const madeShots = filteredData.filter(shot => shot.made).length;
@@ -365,7 +363,13 @@ const ShotChart: React.FC<ShotChartProps> = ({ data, teamColors }) => {
                             <svg width="20" height="20" viewBox="0 0 20 20">
                               <circle cx="10" cy="10" r="5" fill={teamColor} opacity={0.8} />
                             </svg>
-                            <span className="text-sm">2-pointer</span>
+                            <span className="text-sm">2pts réussi</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <svg width="20" height="20" viewBox="0 0 20 20">
+                              <circle cx="10" cy="10" r="5" fill="#888888" opacity={0.5} />
+                            </svg>
+                            <span className="text-sm">2pts raté</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <svg width="20" height="20" viewBox="0 0 20 20">
@@ -375,7 +379,17 @@ const ShotChart: React.FC<ShotChartProps> = ({ data, teamColors }) => {
                                 opacity={0.8} 
                               />
                             </svg>
-                            <span className="text-sm">3-pointer</span>
+                            <span className="text-sm">3pts réussi</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <svg width="20" height="20" viewBox="0 0 20 20">
+                              <polygon 
+                                points="10,4 4,16 16,16" 
+                                fill="#888888" 
+                                opacity={0.5} 
+                              />
+                            </svg>
+                            <span className="text-sm">3pts raté</span>
                           </div>
                         </div>
                       )}
@@ -394,7 +408,6 @@ const ShotChart: React.FC<ShotChartProps> = ({ data, teamColors }) => {
                   data={chartData}
                   quarter={quarter}
                   renderCustomShape={renderCustomShape}
-                  teamColor={teamColor} 
                 />
               ))}
             </div>

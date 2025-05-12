@@ -203,7 +203,7 @@ const ClutchSituationsChart: React.FC<ClutchSituationsChartProps> = ({ data, tea
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
                       <YAxis domain={[0, 100]} />
-                      <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
+                      <Tooltip formatter={(value: any) => `${Number(value).toFixed(1)}%`} />
                       <Bar dataKey="percentage" fill={teamColor} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -223,13 +223,13 @@ const ClutchSituationsChart: React.FC<ClutchSituationsChartProps> = ({ data, tea
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
-                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(1)}%)`}
+                        label={({ name, percent }: { name: string, percent: number }) => `${name} (${(percent * 100).toFixed(1)}%)`}
                       >
                         {shotDistributionData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value) => value} />
+                      <Tooltip formatter={(value: any) => value} />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
@@ -274,7 +274,12 @@ const ClutchSituationsChart: React.FC<ClutchSituationsChartProps> = ({ data, tea
                       <XAxis dataKey="name" />
                       <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
                       <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" domain={[0, 100]} />
-                      <Tooltip />
+                      <Tooltip formatter={(value: any, name: string) => {
+                        if (name === "réussite") {
+                          return [`${Number(value).toFixed(2)}%`, name];
+                        }
+                        return [value, name];
+                      }} />
                       <Legend />
                       <Bar yAxisId="left" dataKey="shots" fill="#8884d8" name="Nombre de tirs" />
                       <Bar yAxisId="right" dataKey="réussite" fill={teamColor} name="% de réussite" />

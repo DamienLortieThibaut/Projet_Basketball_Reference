@@ -15,6 +15,7 @@ import {
   ScatterChart,
   Scatter,
   TooltipProps,
+  Legend
 } from "recharts"
 import { ArrowUpDown, Search, Filter, BarChart3, UserRound, Target, Activity } from "lucide-react"
 import PlayerCard from "@/components/PlayerCard"
@@ -70,7 +71,7 @@ const teamColors: { [key: string]: { bg: string, text: string } } = {
   'DEN': { bg: '#0E2240', text: 'white' }, // Denver Nuggets - Bleu foncé
   'LAC': { bg: '#C8102E', text: 'white' }, // Los Angeles Clippers - Rouge
   'MIL': { bg: '#00471B', text: 'white' }, // Milwaukee Bucks - Vert
-  'PHX': { bg: '#1D1160', text: 'white' }, // Phoenix Suns - Violet
+  'PHO': { bg: '#1D1160', text: 'white' }, // Phoenix Suns - Violet
   'POR': { bg: '#E03A3E', text: 'white' }, // Portland Trail Blazers - Rouge
   'SAC': { bg: '#5A2D81', text: 'white' }, // Sacramento Kings - Violet
   'SAS': { bg: '#C4CED4', text: 'black' }, // San Antonio Spurs - Gris
@@ -78,8 +79,8 @@ const teamColors: { [key: string]: { bg: string, text: string } } = {
   'UTA': { bg: '#002B5C', text: 'white' }, // Utah Jazz - Bleu foncé
   'WAS': { bg: '#002B5C', text: 'white' }, // Washington Wizards - Bleu
   'ATL': { bg: '#E03A3E', text: 'white' }, // Atlanta Hawks - Rouge
-  'BKN': { bg: '#000000', text: 'white' }, // Brooklyn Nets - Noir
-  'CHA': { bg: '#1D1160', text: 'white' }, // Charlotte Hornets - Violet
+  'BRK': { bg: '#000000', text: 'white' }, // Brooklyn Nets - Noir
+  'CHO': { bg: '#1D1160', text: 'white' }, // Charlotte Hornets - Violet
   'CLE': { bg: '#6F263D', text: 'white' }, // Cleveland Cavaliers - Rouge foncé
   'DET': { bg: '#C8102E', text: 'white' }, // Detroit Pistons - Rouge
   'IND': { bg: '#002D62', text: 'white' }, // Indiana Pacers - Bleu
@@ -447,19 +448,23 @@ export default function Dashboard() {
                 <div className="p-4 border-2 bg-gray-100">
                   <div style={{ width: '100%', height: 400 }}>
                     <ResponsiveContainer>
-                      <ScatterChart>
+                      <ScatterChart
+                        margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                      >
                         <CartesianGrid />
                         <XAxis 
                           type="number" 
                           dataKey="minutes" 
                           name="Minutes"
                           domain={[0, 12]}
+                          label={{ value: 'Minutes jouées', position: 'insideBottom', offset: -10 }}
                         />
                         <YAxis 
                           type="number" 
                           dataKey="points" 
                           name="Points"
                           domain={[0, 10]}
+                          label={{ value: 'Points marqués', angle: -90, position: 'insideLeft' }}
                         />
                         <Tooltip
                           content={({ payload }: TooltipProps) => {
@@ -491,6 +496,26 @@ export default function Dashboard() {
                             />
                           ))}
                         </Scatter>
+                        <Legend 
+                          content={() => (
+                            <div className="flex flex-col items-center mt-4">
+                              <p className="text-sm font-medium mb-2">Pourcentage de réussite aux tirs</p>
+                              <div className="items-center">
+                                <div style={{ 
+                                  width: '200px', 
+                                  height: '20px', 
+                                  background: 'linear-gradient(to right, hsl(0, 70%, 50%), hsl(60, 70%, 50%), hsl(120, 70%, 50%), hsl(240, 70%, 50%))'
+                                }} />
+                                <div className="flex justify-between w-[200px] text-xs">
+                                  <span>0%</span>
+                                  <span>33%</span>
+                                  <span>66%</span>
+                                  <span>100%</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        />
                       </ScatterChart>
                     </ResponsiveContainer>
                   </div>
