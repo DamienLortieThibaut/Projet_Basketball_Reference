@@ -1,9 +1,7 @@
 from scrapy.crawler import CrawlerProcess
 from basketball_scrapy_project.spiders.boxscore_spider import BoxScoreSpider
-from basketball_scrapy_project.spiders.shotchart_spider import ShotChartSpider
 import os
 import json
-import sys
 import argparse
 from scrapy.utils.log import configure_logging
 import logging
@@ -128,8 +126,6 @@ print(f"Lancement du scraping... Sortie vers {output_json} et {output_csv}")
 
 if args.spider == 'boxscore':
     process.crawl(BoxScoreSpider, full_season=str(args.full_season).lower())
-else:
-    process.crawl(ShotChartSpider, player_id=args.player_id, season=args.season)
 
 process.start()
 print(f"Scraping terminé. Vérifiez les fichiers {output_json} et {output_csv}")

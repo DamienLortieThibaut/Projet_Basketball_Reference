@@ -3,7 +3,6 @@ import time
 import random
 from basketball_scrapy_project.items import PlayerClutchStats
 from scrapy.loader import ItemLoader
-import logging
 import re
 
 class BoxScoreSpider(scrapy.Spider):

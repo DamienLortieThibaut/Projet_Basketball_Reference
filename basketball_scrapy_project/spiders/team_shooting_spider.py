@@ -1,18 +1,16 @@
 import scrapy
 import re
-import time
-import os
 from basketball_scrapy_project.items import ShotChartData
 from scrapy.loader import ItemLoader
 from scrapy.exceptions import CloseSpider
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from scrapy import signals
+from webdriver_manager.chrome import ChromeDriverManager
 
 class TeamShootingSpider(scrapy.Spider):
     name = 'team_shooting'
@@ -275,39 +273,3 @@ class TeamShootingSpider(scrapy.Spider):
                 self.logger.error(f"Erreur lors de l'extraction des données d'un tir: {e}")
         
         self.logger.info(f"Terminé le scraping des tirs pour {player_name}")
-
-# REMARQUE IMPORTANTE:
-"""
-Les données de tir (shot chart) sur Basketball Reference sont générées dynamiquement via JavaScript.
-Scrapy ne peut pas exécuter JavaScript, donc nous ne pouvons pas extraire ces données avec un spider Scrapy standard.
-
-Pour résoudre ce problème, vous avez besoin d'une des solutions suivantes:
-
-1. Utiliser Scrapy avec Splash ou Selenium pour rendre le JavaScript:
-   - Installation: pip install scrapy-selenium
-   - Exemple d'implémentation:
-
-   from scrapy_selenium import SeleniumRequest
-   
-   def start_requests(self):
-       for url in self.start_urls:
-           yield SeleniumRequest(
-               url=url,
-               callback=self.parse,
-               wait_time=10  # Attendre 10 secondes pour que le JS s'exécute
-           )
-           
-   # Et modifier les autres requêtes pour utiliser SeleniumRequest également
-
-2. Trouver l'API qui fournit les données brutes:
-   - Les données sont probablement chargées via une API JSON
-   - Examiner les requêtes réseau dans les outils de développement du navigateur
-   - Rechercher des requêtes AJAX qui chargent les données de tir
-
-3. Analyser le code JavaScript pour extraire directement les données:
-   - Examiner les scripts pour trouver la variable qui contient les données (ex: 'var shotData = ...')
-   - Utiliser regex ou un parseur JS pour extraire ces données
-
-Si vous voulez continuer avec cette approche, vous devrez adapter votre pipeline pour tenir 
-compte du fait qu'aucune donnée de tir ne sera collectée avec le spider actuel.
-""" 
