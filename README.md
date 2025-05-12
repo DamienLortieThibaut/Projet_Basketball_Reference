@@ -5,6 +5,12 @@ Ce projet extrait les statistiques des joueurs NBA à partir de basketball-refer
 - Données de position des tirs (shot chart)
 - Données de tir par équipe pour tous les joueurs d'une équipe
 
+## Demonstration
+
+Le dashboard est conçu pour être intuitif et offre une expérience utilisateur fluide pour analyser les données de basketball extraites par les scrapers.
+
+Voici une preview disponible par ce lien: [Le lien de la video](https://youtu.be/QwyLAFyd4jo)
+
 ## Installation et démarrage du projet
 
 ### Backend (Scraper)
@@ -257,9 +263,3 @@ Le dashboard (`frontend_basketball_scrapy/src/pages/Dashboard.tsx`) offre plusie
    - Tendances de tir: Évolution des performances au fil du temps
    - Efficacité par distance: Analyse des tirs selon leur distance du panier
    - Situations clutch: Performances dans les moments critiques (2 dernières minutes du 4ème quart-temps ou prolongation)
-
-### Demonstration
-
-Le dashboard est conçu pour être intuitif et offre une expérience utilisateur fluide pour analyser les données de basketball extraites par les scrapers.
-
-Voici une preview disponible par ce lien: [!Le lien de la video](https://youtu.be/QwyLAFyd4jo)
