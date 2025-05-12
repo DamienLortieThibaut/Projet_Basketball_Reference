@@ -55,20 +55,6 @@ python app.py --spider=boxscore --output=nba_clutch_2024
 
 Cela générera `nba_clutch_2024.json` et `nba_clutch_2024.csv`.
 
-### Mode Shot Chart (données de position des tirs)
-
-Pour récupérer les données de position des tirs d'un joueur spécifique pour une saison donnée:
-
-```
-python app.py --spider=shotchart --player-id=gilgesh01 --season=2019
-```
-
-Cela récupérera les données de tirs de Shai Gilgeous-Alexander pour la saison 2018-2019 et générera les fichiers `gilgesh01_2019_shotchart.json` et `gilgesh01_2019_shotchart.csv`.
-
-Vous pouvez modifier les paramètres suivants:
-- `--player-id` : ID du joueur sur basketball-reference.com (ex: jamesle01 pour LeBron James)
-- `--season` : Saison (ex: 2023 pour la saison 2022-2023)
-
 ### Mode Team Shooting (données de tir par équipe)
 
 Ce mode extrait les données de tir pour tous les joueurs d'une équipe spécifique:
@@ -210,63 +196,3 @@ python app.py --spider=shotchart --player-id=jamesle01 --season=2023
 ```
 scrapy crawl team_shooting -a team_code=BOS -a season=2024 -o celtics_shots_2024.csv
 ```
-
-### Utilisation avec analyse des données
-
-Vous pouvez ensuite analyser les données avec pandas:
-
-```python
-import pandas as pd
-
-# Charger les données de statistiques de match
-clutch_stats = pd.read_csv('clutch_stats.csv')
-
-# Analyser les données
-top_scorers = clutch_stats.groupby('player_name')['points'].sum().sort_values(ascending=False).head(10)
-print("Top 10 des scoreurs en 4ème quart-temps et prolongations:")
-print(top_scorers)
-
-# Charger les données de tirs
-shot_data = pd.read_csv('celtics_shots_2024.csv')
-
-# Analyser les taux de réussite par distance
-shot_success_by_distance = shot_data.groupby(['player_name', 'shot_distance'])['is_made'].apply(
-    lambda x: (x == 'True').sum() / len(x)
-).sort_index()
-print("Taux de réussite par distance pour chaque joueur:")
-print(shot_success_by_distance)
-
-# Analyser les zones de tir de l'équipe
-import matplotlib.pyplot as plt
-import json
-
-# Charger les informations des équipes
-with open('team_colors.json', 'r') as f:
-    team_colors = json.load(f)
-
-# Créer un graphique de dispersion des tirs
-team_code = 'BOS'
-plt.figure(figsize=(10, 9))
-plt.scatter(
-    shot_data[shot_data['is_made'] == 'True']['x_coordinate'].astype(float),
-    shot_data[shot_data['is_made'] == 'True']['y_coordinate'].astype(float),
-    c=team_colors[team_code]['bg'],
-    alpha=0.7,
-    marker='o',
-    s=50,
-    label='Tirs réussis'
-)
-plt.scatter(
-    shot_data[shot_data['is_made'] == 'False']['x_coordinate'].astype(float),
-    shot_data[shot_data['is_made'] == 'False']['y_coordinate'].astype(float),
-    c='red',
-    alpha=0.5,
-    marker='x',
-    s=40,
-    label='Tirs manqués'
-)
-plt.title(f"Shot Chart {team_colors[team_code]['name']} - Saison 2023-2024", fontsize=16)
-plt.legend()
-plt.savefig(f"{team_code}_shotchart.png", dpi=300)
-plt.show()
-``` 
